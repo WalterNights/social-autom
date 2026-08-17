@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { pathToFileURL } from 'node:url';
 import { ROOT } from './lib/posts.js';
 
 export const TOKENS = path.join(ROOT, '.tokens.json');
@@ -75,7 +76,9 @@ export async function freshTokens() {
 
 // --- flujo interactivo, solo cuando se corre este archivo directamente ---
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL y no `file://${argv[1]}`: en Windows la ruta trae backslashes
+// y los espacios van como %20, así que la comparación cruda nunca coincide.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const redirect = env('LI_REDIRECT_URI');
   const port = Number(new URL(redirect).port || 80);
   const state = crypto.randomBytes(16).toString('hex');
