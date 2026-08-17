@@ -1,0 +1,317 @@
+<div id="root">
+<style>
+  #root {
+    --ink: #14202A;
+    --paper: #ECEEE7;
+    --grid: #D6DACE;
+    --marker: #F5E04E;
+    --signal: #2549E8;
+    --muted: #6E786C;
+    --bench: #202B25;
+
+    --display: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+    background: var(--bench);
+    padding: 40px 24px 80px;
+    font-family: var(--display);
+    color: var(--paper);
+  }
+  #root * { box-sizing: border-box; }
+
+  .pagehead { max-width: 1120px; margin: 0 auto 40px; }
+  .pagehead h1 {
+    font-size: clamp(28px, 5vw, 46px); font-weight: 800; letter-spacing: -0.035em;
+    margin: 0 0 12px; line-height: 1;
+  }
+  .pagehead p { margin: 0 0 8px; color: #B9C4B7; font-size: 15px; line-height: 1.6; max-width: 62ch; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+  .sw { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; padding: 7px 10px; border-radius: 3px; color: var(--ink); }
+
+  .toolbar { max-width: 1120px; margin: 0 auto 28px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: none; color: var(--paper); border: 1px solid #4A574C; padding: 9px 14px;
+    border-radius: 3px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--marker); color: var(--marker); }
+  .btn:focus-visible { outline: 2px solid var(--marker); outline-offset: 2px; }
+  .hint { font-family: var(--mono); font-size: 11px; color: #8C978A; }
+
+  .stack { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+  .slot { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+  .slotlabel { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #8C978A; }
+  .slotlabel b { color: var(--marker); font-weight: 400; }
+  .frame { width: 100%; max-width: 540px; aspect-ratio: 1; overflow: hidden; border-radius: 4px; }
+  .frame.full { max-width: 1080px; }
+
+  /* ---- the 1080x1080 canvas ---- */
+  .card {
+    width: 1080px; height: 1080px; transform-origin: top left;
+    background:
+      repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 60px),
+      repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 60px),
+      var(--paper);
+    color: var(--ink);
+    padding: 84px 84px 76px 132px;
+    position: relative; display: flex; flex-direction: column;
+  }
+  /* signature: vertical ticket strip on the left edge */
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 52px;
+    background: var(--ink);
+  }
+  .ticket {
+    position: absolute; left: 26px; top: 50%; transform: translate(-50%, -50%) rotate(-90deg);
+    font-family: var(--mono); font-size: 19px; letter-spacing: 0.42em; color: var(--paper);
+    white-space: nowrap; text-transform: uppercase;
+  }
+  .serie {
+    font-family: var(--mono); font-size: 20px; letter-spacing: 0.3em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 34px;
+  }
+  .card h2 {
+    font-size: 92px; font-weight: 800; letter-spacing: -0.045em; line-height: 0.95;
+    margin: 0 0 auto; max-width: 15ch;
+  }
+  /* signature: skewed marker highlight */
+  .mk { position: relative; display: inline-block; }
+  .mk::before {
+    content: ""; position: absolute; left: -10px; right: -10px; top: 12%; bottom: 6%;
+    background: var(--marker); transform: skewX(-8deg); z-index: -1;
+  }
+  .body { margin: 56px 0; }
+  .foot {
+    font-family: var(--mono); font-size: 23px; line-height: 1.45; color: var(--muted);
+    border-top: 3px solid var(--ink); padding-top: 26px; margin-top: auto;
+  }
+  .sign { position: absolute; right: 84px; bottom: 76px; font-family: var(--mono); font-size: 19px; letter-spacing: 0.16em; color: var(--muted); }
+
+  /* --- A: concepto --- */
+  .tokens { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .tok {
+    font-family: var(--mono); font-size: 34px; padding: 18px 22px;
+    border: 3px solid var(--ink); background: var(--paper);
+  }
+  .tok.dim { color: var(--muted); border-color: var(--grid); }
+  .tok.hit { background: var(--marker); }
+  .pct { font-family: var(--mono); font-size: 22px; color: var(--muted); display: block; margin-top: 10px; letter-spacing: 0.08em; }
+  .arrow { font-size: 40px; color: var(--signal); align-self: center; }
+
+  /* --- B: comparación --- */
+  .cols { display: grid; grid-template-columns: 1fr 3px 1fr; gap: 46px; align-items: start; }
+  .rule { background: var(--ink); align-self: stretch; }
+  .colhead { font-family: var(--mono); font-size: 22px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 30px; }
+  .colhead.no { color: var(--muted); }
+  .colhead.yes { color: var(--signal); }
+  .items { list-style: none; margin: 0; padding: 0; }
+  .items li { font-size: 34px; line-height: 1.5; padding-left: 42px; position: relative; margin-bottom: 16px; }
+  .items li::before {
+    content: "—"; position: absolute; left: 0; font-family: var(--mono); color: var(--muted);
+  }
+  .items.tick li::before { content: "✓"; color: var(--signal); }
+  .items.cross li::before { content: "✕"; color: var(--muted); }
+
+  /* --- C: proceso --- */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: center; gap: 30px; }
+  .num {
+    font-family: var(--mono); font-size: 24px; width: 62px; height: 62px; flex: 0 0 62px;
+    border: 3px solid var(--ink); display: grid; place-items: center;
+  }
+  .step.key .num { background: var(--marker); }
+  .steptxt { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; }
+  .steptxt small { display: block; font-family: var(--mono); font-size: 21px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+  .connector { width: 3px; height: 40px; background: var(--ink); margin-left: 29px; }
+
+  /* --- D: lista --- */
+  .checks { list-style: none; margin: 0; padding: 0; }
+  .checks li {
+    display: flex; align-items: baseline; gap: 26px; font-size: 37px; line-height: 1.2;
+    padding: 21px 0; border-bottom: 2px solid var(--grid);
+  }
+  .checks li:last-child { border-bottom: none; }
+  .checks .i { font-family: var(--mono); font-size: 22px; color: var(--muted); flex: 0 0 44px; }
+  .checks li.key { font-weight: 700; }
+
+  /* --- E: cierre --- */
+  .pairs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 34px 40px; align-items: center; }
+  .pairs .l { font-size: 36px; font-weight: 700; text-align: right; letter-spacing: -0.02em; }
+  .pairs .a { font-family: var(--mono); font-size: 26px; color: var(--signal); }
+  .pairs .r { font-family: var(--mono); font-size: 30px; color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="pagehead">
+  <h1>IA con criterio — sistema visual</h1>
+  <p>Cinco plantillas para las 24 imágenes de la serie. Todas comparten el mismo lenguaje: papel cuadriculado de cuaderno de ingeniería, tinta petróleo, y un resaltador amarillo que marca siempre lo que aporta el criterio humano. El azul señala lo que hace la máquina.</p>
+  <p>La marca de la serie es la cinta vertical negra del borde izquierdo: se reconoce al scrollear, incluso en miniatura.</p>
+  <div class="swatches">
+    <span class="sw" style="background:#14202A;color:#ECEEE7">--ink #14202A</span>
+    <span class="sw" style="background:#ECEEE7">--paper #ECEEE7</span>
+    <span class="sw" style="background:#D6DACE">--grid #D6DACE</span>
+    <span class="sw" style="background:#F5E04E">--marker #F5E04E</span>
+    <span class="sw" style="background:#2549E8;color:#ECEEE7">--signal #2549E8</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button class="btn" id="zoom">Ver a tamaño real (1080px)</button>
+  <span class="hint">Para exportar: captura de pantalla del recuadro a tamaño real, o abre este archivo en el navegador e imprime a PDF.</span>
+</div>
+
+<div class="stack">
+
+  <!-- ============ PLANTILLA A ============ -->
+  <div class="slot">
+    <div class="slotlabel">Plantilla A · <b>Concepto</b> — para posts 01, 03, 08, 18</div>
+    <div class="frame"><div class="card">
+      <div class="ticket">IA con criterio</div>
+      <div class="serie">Fundamentos</div>
+      <h2>No sabe.<br><span class="mk">Predice.</span></h2>
+      <div class="body">
+        <div class="tokens">
+          <div class="tok dim">El gato se subió al<span class="pct">contexto</span></div>
+          <div class="arrow">→</div>
+          <div class="tok hit">tejado<span class="pct">41%</span></div>
+          <div class="tok">árbol<span class="pct">22%</span></div>
+          <div class="tok">sofá<span class="pct">19%</span></div>
+        </div>
+      </div>
+      <div class="foot">Un LLM elige el siguiente token más probable.<br>No consulta la verdad.</div>
+      <div class="sign">@tu-usuario</div>
+    </div></div>
+  </div>
+
+  <!-- ============ PLANTILLA B ============ -->
+  <div class="slot">
+    <div class="slotlabel">Plantilla B · <b>Comparación</b> — para posts 02, 05, 09, 11, 12, 13, 17, 23</div>
+    <div class="frame"><div class="card">
+      <div class="ticket">IA con criterio</div>
+      <div class="serie">Ingeniería</div>
+      <h2>El modelo traduce.<br><span class="mk">Tu código decide.</span></h2>
+      <div class="body">
+        <div class="cols">
+          <div>
+            <div class="colhead yes">El modelo sí</div>
+            <ul class="items tick">
+              <li>Interpretar lenguaje</li>
+              <li>Extraer datos</li>
+              <li>Clasificar</li>
+              <li>Redactar</li>
+            </ul>
+          </div>
+          <div class="rule"></div>
+          <div>
+            <div class="colhead no">El modelo no</div>
+            <ul class="items cross">
+              <li>Calcular dinero</li>
+              <li>Aplicar reglas de precio</li>
+              <li>Autorizar accesos</li>
+              <li>Validar cumplimiento</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="foot">Capa de servicio, detrás de tu interfaz.<br>Nunca en el controlador.</div>
+      <div class="sign">@tu-usuario</div>
+    </div></div>
+  </div>
+
+  <!-- ============ PLANTILLA C ============ -->
+  <div class="slot">
+    <div class="slotlabel">Plantilla C · <b>Proceso</b> — para posts 07, 10, 14, 21</div>
+    <div class="frame"><div class="card">
+      <div class="ticket">IA con criterio</div>
+      <div class="serie">Arquitectura</div>
+      <h2><span class="mk">RAG</span> en 3 pasos</h2>
+      <div class="body">
+        <div class="flow">
+          <div class="step"><div class="num">01</div><div class="steptxt">Buscas<small>los fragmentos relevantes en tus datos</small></div></div>
+          <div class="connector"></div>
+          <div class="step key"><div class="num">02</div><div class="steptxt">Los pegas<small>en el prompt, como contexto</small></div></div>
+          <div class="connector"></div>
+          <div class="step"><div class="num">03</div><div class="steptxt">Le pides<small>que responda usando solo eso</small></div></div>
+        </div>
+      </div>
+      <div class="foot">No reentrenas nada.<br>Le das la página correcta, justo a tiempo.</div>
+      <div class="sign">@tu-usuario</div>
+    </div></div>
+  </div>
+
+  <!-- ============ PLANTILLA D ============ -->
+  <div class="slot">
+    <div class="slotlabel">Plantilla D · <b>Lista / checklist</b> — para posts 04, 06, 15, 16, 19, 20, 22</div>
+    <div class="frame"><div class="card">
+      <div class="ticket">IA con criterio</div>
+      <div class="serie">Proceso</div>
+      <h2>Code review de <span class="mk">código IA</span></h2>
+      <div class="body">
+        <ul class="checks">
+          <li><span class="i">01</span>¿Las dependencias existen?</li>
+          <li><span class="i">02</span>¿Los casos borde están cubiertos?</li>
+          <li><span class="i">03</span>¿Cómo maneja los errores?</li>
+          <li><span class="i">04</span>¿Encaja con nuestras convenciones?</li>
+          <li><span class="i">05</span>¿Hay problemas de seguridad?</li>
+          <li><span class="i">06</span>¿Cuál es el costo en producción?</li>
+          <li class="key"><span class="i">07</span>¿Puedo explicar cada línea?</li>
+        </ul>
+      </div>
+      <div class="foot">No "¿funciona?".<br>Sino "¿es lo que habríamos escrito nosotros?".</div>
+      <div class="sign">@tu-usuario</div>
+    </div></div>
+  </div>
+
+  <!-- ============ PLANTILLA E ============ -->
+  <div class="slot">
+    <div class="slotlabel">Plantilla E · <b>Cierre / manifiesto</b> — para el post 24 y para tu banner de perfil</div>
+    <div class="frame"><div class="card">
+      <div class="ticket">IA con criterio</div>
+      <div class="serie">Cierre</div>
+      <h2>Casi nada de esto era <span class="mk">sobre IA</span></h2>
+      <div class="body">
+        <div class="pairs">
+          <div class="l">RAG</div><div class="a">es</div><div class="r">Búsqueda</div>
+          <div class="l">Tool use</div><div class="a">es</div><div class="r">Diseño de API</div>
+          <div class="l">MCP</div><div class="a">es</div><div class="r">Integración</div>
+          <div class="l">Agentes</div><div class="a">es</div><div class="r">Control de flujo</div>
+          <div class="l">Evals</div><div class="a">es</div><div class="r">Testing</div>
+          <div class="l">Tokens</div><div class="a">es</div><div class="r">Gestión de recursos</div>
+        </div>
+      </div>
+      <div class="foot">Sigue siendo ingeniería.<br>Y sigue siendo tuyo.</div>
+      <div class="sign">@tu-usuario</div>
+    </div></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('root');
+  var cards = root.querySelectorAll('.card');
+  var frames = root.querySelectorAll('.frame');
+  var btn = root.querySelector('#zoom');
+  var real = false;
+
+  function fit() {
+    frames.forEach(function (f, i) {
+      var w = real ? 1080 : f.clientWidth;
+      var s = w / 1080;
+      cards[i].style.transform = 'scale(' + s + ')';
+    });
+  }
+
+  btn.addEventListener('click', function () {
+    real = !real;
+    frames.forEach(function (f) { f.classList.toggle('full', real); });
+    btn.textContent = real ? 'Volver a vista previa' : 'Ver a tamaño real (1080px)';
+    requestAnimationFrame(fit);
+  });
+
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</div>

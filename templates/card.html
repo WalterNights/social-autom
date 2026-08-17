@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --ink: #14202A;
+    --paper: #ECEEE7;
+    --grid: #D6DACE;
+    --marker: #F5E04E;
+    --signal: #2549E8;
+    --muted: #6E786C;
+    --display: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fff; font-family: var(--display); }
+
+  .card {
+    width: 1080px; height: 1080px;
+    background:
+      repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 60px),
+      repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 60px),
+      var(--paper);
+    color: var(--ink);
+    padding: 84px 84px 76px 132px;
+    position: relative; display: flex; flex-direction: column;
+  }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 52px; background: var(--ink); }
+  .ticket {
+    position: absolute; left: 26px; top: 50%; transform: translate(-50%, -50%) rotate(-90deg);
+    font-family: var(--mono); font-size: 19px; letter-spacing: 0.42em; color: var(--paper);
+    white-space: nowrap; text-transform: uppercase;
+  }
+  .label { font-family: var(--mono); font-size: 20px; letter-spacing: 0.3em; color: var(--muted); text-transform: uppercase; margin-bottom: 34px; }
+  h2 { font-size: 92px; font-weight: 800; letter-spacing: -0.045em; line-height: 0.95; max-width: 15ch; }
+  h2.sm { font-size: 74px; }
+  .mk { position: relative; display: inline-block; z-index: 0; }
+  .mk::before { content: ""; position: absolute; left: -10px; right: -10px; top: 12%; bottom: 6%; background: var(--marker); transform: skewX(-8deg); z-index: -1; }
+  .body { margin: 56px 0; }
+  .foot { font-family: var(--mono); font-size: 23px; line-height: 1.45; color: var(--muted); border-top: 3px solid var(--ink); padding-top: 26px; margin-top: auto; }
+  .sign { position: absolute; right: 84px; bottom: 76px; font-family: var(--mono); font-size: 19px; letter-spacing: 0.16em; color: var(--muted); }
+
+  .tokens { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .tok { font-family: var(--mono); font-size: 34px; padding: 18px 22px; border: 3px solid var(--ink); }
+  .tok.dim { color: var(--muted); border-color: var(--grid); }
+  .tok.hit { background: var(--marker); }
+  .tok span { font-family: var(--mono); font-size: 22px; color: var(--muted); display: block; margin-top: 10px; letter-spacing: 0.08em; }
+
+  .cols { display: grid; grid-template-columns: 1fr 3px 1fr; gap: 46px; align-items: start; }
+  .rule { background: var(--ink); align-self: stretch; }
+  .colhead { font-family: var(--mono); font-size: 22px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 30px; }
+  .colhead.a { color: var(--signal); }
+  .colhead.b { color: var(--muted); }
+  ul { list-style: none; }
+  .items li { font-size: 34px; line-height: 1.5; padding-left: 42px; position: relative; margin-bottom: 16px; }
+  .items li::before { content: "—"; position: absolute; left: 0; font-family: var(--mono); color: var(--muted); }
+  .items.tick li::before { content: "✓"; color: var(--signal); }
+  .items.cross li::before { content: "✕"; color: var(--muted); }
+
+  .step { display: flex; align-items: center; gap: 30px; }
+  .num { font-family: var(--mono); font-size: 24px; width: 62px; height: 62px; flex: 0 0 62px; border: 3px solid var(--ink); display: grid; place-items: center; }
+  .step.key .num { background: var(--marker); }
+  .steptxt { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; }
+  .steptxt small { display: block; font-family: var(--mono); font-size: 21px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+  .connector { width: 3px; height: 40px; background: var(--ink); margin-left: 29px; }
+
+  .checks li { display: flex; align-items: baseline; gap: 26px; font-size: 37px; line-height: 1.2; padding: 21px 0; border-bottom: 2px solid var(--grid); }
+  .checks li:last-child { border-bottom: none; }
+  .checks .i { font-family: var(--mono); font-size: 22px; color: var(--muted); flex: 0 0 44px; }
+  .checks li.key { font-weight: 700; }
+
+  .pairs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 30px 40px; align-items: center; }
+  .pairs .l { font-size: 36px; font-weight: 700; text-align: right; letter-spacing: -0.02em; }
+  .pairs .a { font-family: var(--mono); font-size: 26px; color: var(--signal); }
+  .pairs .r { font-family: var(--mono); font-size: 30px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="ticket" id="ticket"></div>
+  <div class="label" id="label"></div>
+  <h2 id="title"></h2>
+  <div class="body" id="figure"></div>
+  <div class="foot" id="foot"></div>
+  <div class="sign" id="sign"></div>
+</div>
+
+<script>
+function esc(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+function titleHtml(title, highlight) {
+  const safe = esc(title).replace(/\n/g, '<br>');
+  if (!highlight) return safe;
+  const h = esc(highlight);
+  const i = safe.indexOf(h);
+  if (i === -1) return safe;
+  return safe.slice(0, i) + '<span class="mk">' + h + '</span>' + safe.slice(i + h.length);
+}
+
+const TEMPLATES = {
+  // items: [{ text, sub, hit }]
+  concepto: (d) =>
+    '<div class="tokens">' +
+    d.items
+      .map(
+        (it) =>
+          `<div class="tok ${it.hit ? 'hit' : it.dim ? 'dim' : ''}">${esc(it.text)}` +
+          (it.sub ? `<span>${esc(it.sub)}</span>` : '') +
+          '</div>'
+      )
+      .join('') +
+    '</div>',
+
+  // left/right: { head, items: [] }
+  comparacion: (d) => {
+    const col = (c, tone, fallback) =>
+      `<div><div class="colhead ${tone}">${esc(c.head)}</div><ul class="items ${c.mark || fallback}">` +
+      c.items.map((i) => `<li>${esc(i)}</li>`).join('') +
+      '</ul></div>';
+    return '<div class="cols">' + col(d.left, 'a', 'tick') + '<div class="rule"></div>' + col(d.right, 'b', 'cross') + '</div>';
+  },
+
+  // steps: [{ title, sub, key }]
+  proceso: (d) =>
+    d.steps
+      .map(
+        (s, i) =>
+          (i ? '<div class="connector"></div>' : '') +
+          `<div class="step ${s.key ? 'key' : ''}"><div class="num">${String(i + 1).padStart(2, '0')}</div>` +
+          `<div class="steptxt">${esc(s.title)}${s.sub ? `<small>${esc(s.sub)}</small>` : ''}</div></div>`
+      )
+      .join(''),
+
+  // items: [{ text, key }]
+  lista: (d) =>
+    '<ul class="checks">' +
+    d.items
+      .map(
+        (it, i) =>
+          `<li class="${it.key ? 'key' : ''}"><span class="i">${String(i + 1).padStart(2, '0')}</span>${esc(it.text)}</li>`
+      )
+      .join('') +
+    '</ul>',
+
+  // pairs: [{ l, r }]
+  pares: (d) =>
+    '<div class="pairs">' +
+    d.pairs.map((p) => `<div class="l">${esc(p.l)}</div><div class="a">es</div><div class="r">${esc(p.r)}</div>`).join('') +
+    '</div>',
+};
+
+window.render = function (data) {
+  const build = TEMPLATES[data.template];
+  if (!build) throw new Error('Plantilla desconocida: ' + data.template);
+
+  document.getElementById('ticket').textContent = data.ticket || 'IA con criterio';
+  document.getElementById('label').textContent = data.label;
+  const t = document.getElementById('title');
+  t.innerHTML = titleHtml(data.title, data.highlight);
+  if (data.title.length > 26) t.classList.add('sm');
+  document.getElementById('figure').innerHTML = build(data);
+  document.getElementById('foot').innerHTML = esc(data.foot).replace(/\n/g, '<br>');
+  document.getElementById('sign').textContent = data.handle || '';
+  return true;
+};
+</script>
+</body>
+</html>
