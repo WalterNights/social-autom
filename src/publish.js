@@ -97,53 +97,97 @@ async function createPost(token, author, commentary, imageUrn, altText) {
 
 // --- main ---
 
-const slug = value('slug');
-const post = slug ? listPosts().find((p) => p.meta.slug === slug) : nextDue();
+// En una vista previa nadie espera un aviso; en una corrida de verdad, el aviso
+// es el único modo de enterarse de que algo se rompió.
+const avisando = !flag('dry');
 
-if (!post) {
-  console.log(slug ? `No encontré el post "${slug}"` : 'No hay ningún post listo para hoy.');
-  process.exit(0);
-}
-
-const { errors, warns } = checkPost(post);
-for (const w of warns) console.log(`!  ${w}`);
-if (errors.length) {
-  console.error(`\nNo publico "${post.meta.slug}" porque tiene errores:`);
-  for (const e of errors) console.error(`x  ${e}`);
+/**
+ * Todo camino que termine sin publicar cuando debía hacerlo pasa por aquí.
+ * Sin esto, un fallo del cron se queda escrito en publish.log y nadie lo lee.
+ */
+async function fallar(titulo, detalle) {
+  console.error(`\n${titulo}`);
+  if (detalle) console.error(detalle);
+  if (avisando) {
+    await notify(`❌ No se publicó\n\n${titulo}${detalle ? `\n\n${detalle}` : ''}`);
+  }
   process.exit(1);
 }
 
-const image = post.meta.image ? imagePathFor(post) : null;
-if (image && !fs.existsSync(image)) {
-  console.error(`Falta la imagen. Corre primero: npm run render ${post.meta.slug}`);
-  process.exit(1);
+async function main() {
+  const slug = value('slug');
+  const post = slug ? listPosts().find((p) => p.meta.slug === slug) : nextDue();
+
+  if (!post) {
+    if (slug) return fallar(`No encontré el post "${slug}".`);
+
+    // Que hoy no toque publicar es normal. Que no quede NADA en ready es un
+    // problema: la serie se detiene en silencio y no te enteras hasta semanas
+    // después. Solo avisa en el segundo caso.
+    const quedan = listPosts().filter((p) => p.meta.status === 'ready');
+    console.log('No hay ningún post listo para hoy.');
+    if (!quedan.length) {
+      console.log('Además, no queda ninguno en ready: la cola está agotada.');
+      if (avisando) {
+        await notify(
+          'La cola está agotada\n\nNo queda ningún post en ready, así que a partir de ahora no va a salir nada.\n\nMarca los siguientes con status "ready".'
+        );
+      }
+    }
+    return;
+  }
+
+  const { errors, warns } = checkPost(post);
+  for (const w of warns) console.log(`!  ${w}`);
+  if (errors.length) {
+    return fallar(
+      `El post "${post.meta.slug}" tiene errores de formato.`,
+      errors.map((e) => `· ${e}`).join('\n')
+    );
+  }
+
+  const image = post.meta.image ? imagePathFor(post) : null;
+  if (image && !fs.existsSync(image)) {
+    return fallar(
+      `Falta la imagen de "${post.meta.slug}".`,
+      `Corre: npm run render ${post.meta.slug}`
+    );
+  }
+
+  if (flag('dry')) {
+    console.log(`\n${post.meta.slug} · ${post.meta.date} · ${post.body.length} caracteres`);
+    console.log(image ? `imagen: ${image}` : 'sin imagen');
+    console.log('\n' + '─'.repeat(48) + '\n');
+    console.log(post.body);
+    console.log('\n' + '─'.repeat(48));
+    console.log('\nEsto es una vista previa. Para publicar: npm run publish');
+    return;
+  }
+
+  if (flag('ask') && !(await askApproval(post))) return;
+
+  const tokens = await freshTokens();
+  const imageUrn = image ? await uploadImage(tokens.access_token, tokens.author, image) : null;
+  const urn = await createPost(
+    tokens.access_token,
+    tokens.author,
+    post.body,
+    imageUrn,
+    altTextFor(post.meta.image)
+  );
+
+  savePost(post, { status: 'published', publishedAt: new Date().toISOString(), urn });
+  escribirEstado();
+
+  const url = `https://www.linkedin.com/feed/update/${urn}`;
+  console.log(`\nPublicado: ${url}`);
+  await notify(
+    `Publicado: ${post.meta.slug}\n${url}\n\nLa primera hora es la que cuenta. Entra a responder comentarios.`
+  );
 }
 
-if (flag('dry')) {
-  console.log(`\n${post.meta.slug} · ${post.meta.date} · ${post.body.length} caracteres`);
-  console.log(image ? `imagen: ${image}` : 'sin imagen');
-  console.log('\n' + '─'.repeat(48) + '\n');
-  console.log(post.body);
-  console.log('\n' + '─'.repeat(48));
-  console.log('\nEsto es una vista previa. Para publicar: npm run publish');
-  process.exit(0);
+try {
+  await main();
+} catch (e) {
+  await fallar('Falló la publicación.', e.message);
 }
-
-if (flag('ask') && !(await askApproval(post))) process.exit(0);
-
-const tokens = await freshTokens();
-const imageUrn = image ? await uploadImage(tokens.access_token, tokens.author, image) : null;
-const urn = await createPost(
-  tokens.access_token,
-  tokens.author,
-  post.body,
-  imageUrn,
-  altTextFor(post.meta.image)
-);
-
-savePost(post, { status: 'published', publishedAt: new Date().toISOString(), urn });
-escribirEstado();
-
-const url = `https://www.linkedin.com/feed/update/${urn}`;
-console.log(`\nPublicado: ${url}`);
-await notify(`Publicado: ${post.meta.slug}\n${url}\n\nLa primera hora es la que cuenta. Entra a responder comentarios.`);
