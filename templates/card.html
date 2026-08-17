@@ -37,11 +37,20 @@
   h2.sm { font-size: 74px; }
   .mk { position: relative; display: inline-block; z-index: 0; }
   .mk::before { content: ""; position: absolute; left: -10px; right: -10px; top: 12%; bottom: 6%; background: var(--marker); transform: skewX(-8deg); z-index: -1; }
-  .body { margin: 56px 0; }
+  /* Ocupa el espacio libre entre el título y el pie, y centra la figura ahí
+     dentro. Sin esto el contenido se apelmaza arriba y el tercio inferior de
+     la tarjeta queda vacío. */
+  .body { margin: 56px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .foot { font-family: var(--mono); font-size: 23px; line-height: 1.45; color: var(--muted); border-top: 3px solid var(--ink); padding-top: 26px; margin-top: auto; }
   .sign { position: absolute; right: 84px; bottom: 76px; font-family: var(--mono); font-size: 19px; letter-spacing: 0.16em; color: var(--muted); }
 
   .tokens { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .tokens .arrow { font-family: var(--mono); font-size: 34px; color: var(--muted); align-self: center; }
+  /* Con más de tres cajas la fila no cabe a tamaño completo y se parte, que
+     rompe la lectura de "estas opciones compiten entre sí". */
+  .tokens.tight .tok { font-size: 28px; padding: 14px 18px; }
+  .tokens.tight .tok span { font-size: 19px; margin-top: 8px; }
+  .tokens.tight .arrow { font-size: 28px; }
   .tok { font-family: var(--mono); font-size: 34px; padding: 18px 22px; border: 3px solid var(--ink); }
   .tok.dim { color: var(--muted); border-color: var(--grid); }
   .tok.hit { background: var(--marker); }
@@ -65,6 +74,10 @@
   .steptxt small { display: block; font-family: var(--mono); font-size: 21px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-top: 6px; }
   .connector { width: 3px; height: 40px; background: var(--ink); margin-left: 29px; }
 
+  /* Con seis ítems o más la lista no cabe en los 1080px y empuja el pie fuera
+     de la tarjeta. Medido: 7 ítems se pasaban 27px. */
+  .checks.tight li { font-size: 32px; padding: 15px 0; }
+  .checks.tight .i { font-size: 20px; flex: 0 0 40px; }
   .checks li { display: flex; align-items: baseline; gap: 26px; font-size: 37px; line-height: 1.2; padding: 21px 0; border-bottom: 2px solid var(--grid); }
   .checks li:last-child { border-bottom: none; }
   .checks .i { font-family: var(--mono); font-size: 22px; color: var(--muted); flex: 0 0 44px; }
@@ -103,13 +116,16 @@ function titleHtml(title, highlight) {
 const TEMPLATES = {
   // items: [{ text, sub, hit }]
   concepto: (d) =>
-    '<div class="tokens">' +
+    `<div class="tokens${d.items.length > 3 ? ' tight' : ''}">` +
     d.items
       .map(
-        (it) =>
+        (it, i) =>
           `<div class="tok ${it.hit ? 'hit' : it.dim ? 'dim' : ''}">${esc(it.text)}` +
           (it.sub ? `<span>${esc(it.sub)}</span>` : '') +
-          '</div>'
+          '</div>' +
+          // El item `dim` es el enunciado; lo que sigue son las opciones que
+          // compiten. La flecha marca ese salto, como en el mockup de docs/.
+          (it.dim && i < d.items.length - 1 ? '<div class="arrow">→</div>' : '')
       )
       .join('') +
     '</div>',
@@ -136,7 +152,7 @@ const TEMPLATES = {
 
   // items: [{ text, key }]
   lista: (d) =>
-    '<ul class="checks">' +
+    `<ul class="checks${d.items.length > 5 ? ' tight' : ''}">` +
     d.items
       .map(
         (it, i) =>
