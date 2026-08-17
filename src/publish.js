@@ -59,7 +59,21 @@ async function uploadImage(token, author, file) {
   return image;
 }
 
-async function createPost(token, author, commentary, imageUrn, title) {
+/**
+ * Para contenido de imagen la API documenta `altText`, no `title` (title es de
+ * video). Va el título real de la tarjeta, no el slug: es lo que leen los
+ * lectores de pantalla. Recomendado por debajo de 120 caracteres.
+ */
+function altTextFor(image) {
+  if (!image) return null;
+  const partes = [image.label, image.title].filter(Boolean);
+  const texto = partes.join(': ') || 'Imagen del post';
+  // Los títulos de las tarjetas traen saltos de línea para el render; en el
+  // texto alternativo van como una sola frase.
+  return texto.replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+async function createPost(token, author, commentary, imageUrn, altText) {
   const payload = {
     author,
     commentary: escapeCommentary(commentary),
@@ -68,7 +82,7 @@ async function createPost(token, author, commentary, imageUrn, title) {
     lifecycleState: 'PUBLISHED',
     isReshareDisabledByAuthor: false,
   };
-  if (imageUrn) payload.content = { media: { id: imageUrn, title: title.slice(0, 60) } };
+  if (imageUrn) payload.content = { media: { id: imageUrn, altText } };
 
   const res = await fetch(`${API}/posts`, {
     method: 'POST',
@@ -169,7 +183,13 @@ if (flag('ask') && !(await askApproval(post))) process.exit(0);
 
 const tokens = await freshTokens();
 const imageUrn = image ? await uploadImage(tokens.access_token, tokens.author, image) : null;
-const urn = await createPost(tokens.access_token, tokens.author, post.body, imageUrn, post.meta.slug);
+const urn = await createPost(
+  tokens.access_token,
+  tokens.author,
+  post.body,
+  imageUrn,
+  altTextFor(post.meta.image)
+);
 
 savePost(post, { status: 'published', publishedAt: new Date().toISOString(), urn });
 
