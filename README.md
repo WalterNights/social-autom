@@ -43,6 +43,17 @@ La sesión queda en `.tokens.json` (permisos 600, y está en `.gitignore` — no
 | `npm run publish` | Publica el siguiente post pendiente |
 | `npm run publish -- --ask` | Te lo manda a Telegram y espera que toques "Publicar" |
 | `npm run publish -- --slug X` | Publica uno específico, fuera de turno |
+| `npm run estado` | Regenera `ESTADO.md` con la cola completa |
+| `npm run token` | Cuántos días le quedan al acceso y qué posts peligran |
+| `npm run token -- --avisar` | Igual, pero solo escribe a Telegram si urge. Para el cron |
+
+**Ojo con el `--`.** `npm run publish --slug X` sin los dos guiones no funciona: npm
+se traga el flag y lo interpreta como configuración suya, así que al script nunca le
+llega. Siempre `npm run publish -- --slug X`.
+
+`ESTADO.md` es un archivo **generado**: la verdad de qué se publicó vive en el
+frontmatter de cada post. Si los dos discrepan, gana el post. Se regenera solo
+después de cada publicación.
 
 ## Anatomía de un post
 

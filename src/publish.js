@@ -3,6 +3,7 @@ import { listPosts, nextDue, savePost, imagePathFor } from './lib/posts.js';
 import { checkPost } from './lib/rules.js';
 import { freshTokens } from './auth.js';
 import { escribirEstado } from './estado.js';
+import { notify, askApproval } from './lib/telegram.js';
 
 const API = 'https://api.linkedin.com/rest';
 const VERSION = process.env.LI_VERSION || '202601';
@@ -92,58 +93,6 @@ async function createPost(token, author, commentary, imageUrn, altText) {
   });
   if (!res.ok) throw new Error(`POST /posts -> ${res.status}\n${await res.text()}`);
   return res.headers.get('x-restli-id') || res.headers.get('x-linkedin-id');
-}
-
-// --- Telegram: aprobación desde el celular ---
-
-const TG = process.env.TG_BOT_TOKEN;
-const CHAT = process.env.TG_CHAT_ID;
-
-async function tg(method, body) {
-  if (!TG || !CHAT) throw new Error('Falta TG_BOT_TOKEN o TG_CHAT_ID en .env');
-  const res = await fetch(`https://api.telegram.org/bot${TG}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: CHAT, ...body }),
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(`Telegram ${method}: ${data.description}`);
-  return data.result;
-}
-
-export async function notify(text) {
-  if (TG && CHAT) await tg('sendMessage', { text });
-}
-
-async function askApproval(post, minutes = 45) {
-  await tg('sendMessage', {
-    text: `Toca publicar: ${post.meta.slug}\n\n${'—'.repeat(20)}\n\n${post.body}`,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'Publicar', callback_data: `go:${post.meta.slug}` },
-          { text: 'Saltar hoy', callback_data: `no:${post.meta.slug}` },
-        ],
-      ],
-    },
-  });
-
-  const deadline = Date.now() + minutes * 60_000;
-  let offset = 0;
-  console.log(`Esperando tu respuesta en Telegram (hasta ${minutes} min)...`);
-
-  while (Date.now() < deadline) {
-    const updates = await tg('getUpdates', { offset, timeout: 30 });
-    for (const u of updates) {
-      offset = u.update_id + 1;
-      const cb = u.callback_query;
-      if (!cb?.data?.endsWith(post.meta.slug)) continue;
-      await tg('answerCallbackQuery', { callback_query_id: cb.id });
-      return cb.data.startsWith('go:');
-    }
-  }
-  console.log('Se venció el tiempo de espera. No se publicó nada.');
-  return false;
 }
 
 // --- main ---

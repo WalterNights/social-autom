@@ -11,6 +11,7 @@
     "publish": "node --env-file-if-exists=.env src/publish.js",
     "auth": "node --env-file-if-exists=.env src/auth.js",
     "estado": "node --env-file-if-exists=.env src/estado.js",
+    "token": "node --env-file-if-exists=.env src/token.js",
     "import": "node scripts/import-serie.js",
     "new": "node scripts/new.js"
   },
