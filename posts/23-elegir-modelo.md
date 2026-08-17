@@ -3,7 +3,7 @@
   "slug": "elegir-modelo",
   "n": 23,
   "date": "2026-10-14",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

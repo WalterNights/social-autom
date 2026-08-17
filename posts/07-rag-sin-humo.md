@@ -3,7 +3,7 @@
   "slug": "rag-sin-humo",
   "n": 7,
   "date": "2026-09-07",
-  "status": "draft",
+  "status": "ready",
   "image": {
     "template": "proceso",
     "label": "Arquitectura",

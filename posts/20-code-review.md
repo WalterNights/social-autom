@@ -3,7 +3,7 @@
   "slug": "code-review",
   "n": 20,
   "date": "2026-10-07",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

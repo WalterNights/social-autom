@@ -3,7 +3,7 @@
   "slug": "optimizacion-de-tokens",
   "n": 22,
   "date": "2026-10-12",
-  "status": "draft",
+  "status": "ready",
   "image": {
     "template": "lista",
     "label": "Decisiones",

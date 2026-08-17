@@ -3,7 +3,7 @@
   "slug": "mcp",
   "n": 11,
   "date": "2026-09-16",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

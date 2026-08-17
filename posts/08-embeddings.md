@@ -3,7 +3,7 @@
   "slug": "embeddings",
   "n": 8,
   "date": "2026-09-09",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

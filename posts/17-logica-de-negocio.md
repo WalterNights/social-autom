@@ -3,7 +3,7 @@
   "slug": "logica-de-negocio",
   "n": 17,
   "date": "2026-09-30",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

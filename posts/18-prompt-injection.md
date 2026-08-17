@@ -3,7 +3,7 @@
   "slug": "prompt-injection",
   "n": 18,
   "date": "2026-10-02",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

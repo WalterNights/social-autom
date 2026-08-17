@@ -3,7 +3,7 @@
   "slug": "tool-use",
   "n": 10,
   "date": "2026-09-14",
-  "status": "draft",
+  "status": "ready",
   "image": {
     "template": "proceso",
     "label": "Herramientas",

@@ -3,7 +3,7 @@
   "slug": "patrones-de-diseno",
   "n": 16,
   "date": "2026-09-28",
-  "status": "draft",
+  "status": "ready",
   "image": {
     "template": "lista",
     "label": "Ingeniería",

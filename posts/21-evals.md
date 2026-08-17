@@ -3,7 +3,7 @@
   "slug": "evals",
   "n": 21,
   "date": "2026-10-09",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

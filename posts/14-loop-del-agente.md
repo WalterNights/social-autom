@@ -3,7 +3,7 @@
   "slug": "loop-del-agente",
   "n": 14,
   "date": "2026-09-23",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

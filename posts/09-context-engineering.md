@@ -3,7 +3,7 @@
   "slug": "context-engineering",
   "n": 9,
   "date": "2026-09-11",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

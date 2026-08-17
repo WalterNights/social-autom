@@ -3,7 +3,7 @@
   "slug": "cuando-no-usar-agente",
   "n": 15,
   "date": "2026-09-25",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---
