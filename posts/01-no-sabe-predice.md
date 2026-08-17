@@ -3,7 +3,7 @@
   "slug": "no-sabe-predice",
   "n": 1,
   "date": "2026-08-24",
-  "status": "draft",
+  "status": "published",
   "image": {
     "template": "concepto",
     "label": "Fundamentos",
@@ -30,7 +30,9 @@
       }
     ],
     "foot": "Un LLM elige el siguiente token más probable.\nNo consulta la verdad."
-  }
+  },
+  "publishedAt": "2026-08-17T11:46:54.587Z",
+  "urn": "urn:li:share:7495083744874188800"
 }
 ---
 
