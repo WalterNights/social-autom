@@ -64,13 +64,15 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (!e.hay) {
     const msg = 'No hay sesión de LinkedIn guardada. Corre: npm run auth';
     console.log(msg);
-    if (avisar) await notify(`LinkedIn — ${msg}`);
+    if (avisar && !(await notify(`LinkedIn — ${msg}`))) {
+      console.error('El aviso NO se envió.');
+      process.exit(1);
+    }
     process.exit(0);
   }
 
-  console.log(resumen(e));
-
   if (!avisar) {
+    console.log(resumen(e));
     console.log(
       e.urgente
         ? `\nEstá dentro del umbral de aviso (${AVISO_DIAS} días).`
@@ -79,12 +81,24 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     process.exit(0);
   }
 
-  // Modo cron: solo molesta cuando de verdad hace falta.
-  if (!e.urgente) process.exit(0);
+  // Modo cron: una línea al log mientras no pase nada. Si esto se ejecuta a
+  // diario durante dos meses, el ruido es lo que hace que nadie lea el log.
+  if (!e.urgente) {
+    console.log(`Token ok: ${e.diasCorte} días hasta el corte del ${fecha(e.corteEn)}.`);
+    process.exit(0);
+  }
+
+  console.log(resumen(e));
   if (!configurado) {
     console.error('Hay que avisar, pero Telegram no está configurado (TG_BOT_TOKEN / TG_CHAT_ID).');
     process.exit(1);
   }
-  await notify(`⚠️ LinkedIn: hay que renovar el acceso\n\n${resumen(e)}`);
+  // Si el aviso no sale, hay que salir con error: en un cron, un exit 0 aquí
+  // significaría "todo bien" cuando en realidad nadie se enteró de nada.
+  const enviado = await notify(`⚠️ LinkedIn: hay que renovar el acceso\n\n${resumen(e)}`);
+  if (!enviado) {
+    console.error('El aviso NO se envió.');
+    process.exit(1);
+  }
   console.log('Aviso enviado.');
 }
