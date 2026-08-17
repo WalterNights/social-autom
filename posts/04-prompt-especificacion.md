@@ -3,7 +3,7 @@
   "slug": "prompt-especificacion",
   "n": 4,
   "date": "2026-08-31",
-  "status": "draft",
+  "status": "ready",
   "image": {
     "template": "lista",
     "label": "Práctica",

@@ -3,7 +3,7 @@
   "slug": "alucinaciones",
   "n": 6,
   "date": "2026-09-04",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

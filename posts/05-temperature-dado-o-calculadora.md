@@ -3,7 +3,7 @@
   "slug": "temperature-dado-o-calculadora",
   "n": 5,
   "date": "2026-09-02",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

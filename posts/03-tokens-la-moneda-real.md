@@ -3,7 +3,7 @@
   "slug": "tokens-la-moneda-real",
   "n": 3,
   "date": "2026-08-28",
-  "status": "draft",
+  "status": "ready",
   "image": null
 }
 ---

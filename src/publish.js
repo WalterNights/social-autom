@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { listPosts, nextDue, savePost, imagePathFor } from './lib/posts.js';
 import { checkPost } from './lib/rules.js';
 import { freshTokens } from './auth.js';
+import { escribirEstado } from './estado.js';
 
 const API = 'https://api.linkedin.com/rest';
 const VERSION = process.env.LI_VERSION || '202601';
@@ -192,6 +193,7 @@ const urn = await createPost(
 );
 
 savePost(post, { status: 'published', publishedAt: new Date().toISOString(), urn });
+escribirEstado();
 
 const url = `https://www.linkedin.com/feed/update/${urn}`;
 console.log(`\nPublicado: ${url}`);
