@@ -13,6 +13,7 @@ El objetivo del proyecto es visibilidad ante reclutadores técnicos. Cuando haya
 - **No inventes detalles de la API de LinkedIn.** Si algo no está en el código o en el README, búscalo en la documentación oficial de Microsoft y cita de dónde salió.
 - **No edites posts con `status: "published"`.** Ya salieron; el archivo es el registro de lo que se publicó.
 - **Antes de dar una tarea por terminada, corre `npm run lint`.** Debe quedar en 0 errores.
+- **Los commits usan convención:** `feat:`, `fix:`, `ci:`, `docs:`, `chore:`, `refactor:`. El asunto en minúscula y en imperativo; el cuerpo explica el porqué, no el qué.
 
 ## Cómo se escribe un post
 

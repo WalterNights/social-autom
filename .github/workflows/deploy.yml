@@ -39,7 +39,7 @@ jobs:
             echo ""
             echo "Van en Settings > Secrets and variables > Actions,"
             echo "pestaña 'Secrets' (NO 'Variables'), con estos nombres exactos:"
-            echo "  VPS_HOST         la IP o el hostname"
+            echo "  VPS_HOST         la IP o el hostname del servidor"
             echo "  VPS_USER         root"
             echo "  VPS_PATH         /opt/linkedin-ops"
             echo "  VPS_SSH_KEY      la clave privada completa, con las líneas BEGIN y END"
@@ -63,6 +63,23 @@ jobs:
             || { echo "::error::VPS_SSH_KEY no es una clave privada válida."; exit 1; }
           echo "Clave válida."
 
+      # Opcional: si existe el secreto ENV_FILE, el .env del servidor se
+      # escribe desde ahí y no hay que copiarlo a mano nunca más.
+      - name: Escribir el .env en el servidor
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          if [ -z "$ENV_FILE" ]; then
+            echo "No hay secreto ENV_FILE; se deja el .env que ya tenga el servidor."
+            exit 0
+          fi
+          # Por stdin y no como argumento: los argumentos de un comando son
+          # visibles en el `ps` de cualquier usuario del servidor.
+          printf '%s\n' "$ENV_FILE" | ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes "$VPS_USER@$VPS_HOST" "umask 077; cat > '$VPS_PATH/.env'; chmod 600 '$VPS_PATH/.env'; echo '.env escrito con permisos 600'"
+
       - name: Actualizar el código en el servidor
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -70,12 +87,10 @@ jobs:
           VPS_PATH: ${{ secrets.VPS_PATH }}
         run: |
           # En una sola línea a propósito: partir el comando remoto en varias
-          # líneas entre comillas es justo lo que rompió la versión anterior.
+          # líneas entre comillas es justo lo que rompió la primera versión.
           # --ff-only y no reset --hard: si el VPS tiene commits de una
           # publicación sin empujar, hay que enterarse, no pisarlos.
-          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
-            "$VPS_USER@$VPS_HOST" \
-            "set -e; cd '$VPS_PATH'; git fetch --quiet origin; git merge --ff-only origin/master; npm ci --silent; npx playwright install chromium >/dev/null; npm run lint; npm run render; echo DEPLOY-OK"
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes "$VPS_USER@$VPS_HOST" "set -e; cd '$VPS_PATH'; git fetch --quiet origin; git merge --ff-only origin/master; npm ci --silent; npx playwright install chromium >/dev/null; npm run lint; npm run render; echo DEPLOY-OK"
 
       - name: Borrar la clave
         if: always()
