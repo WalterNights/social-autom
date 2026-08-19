@@ -1,109 +1,108 @@
 # Project context
 
-_Última actualización: 2026-08-19 — cola completa en `ready` y proyecto subido a GitHub. Falta el despliegue en el VPS._
+_Última actualización: 2026-08-19 — el sistema publica solo. Primera publicación automática por cron completada de punta a punta._
 
 ## Current focus
 
-Automatizar la publicación para no correr comandos a mano. Los avisos ya están
-resueltos y probados por Telegram. **Lo que falta es el despliegue en el VPS**
-del usuario (solo backend, sin front) con cron a la hora agendada. Está frenado
-esperando dos datos: qué distro corre y si hay root.
+**El objetivo está cumplido:** el VPS publica solo, tres veces por semana, y avisa
+por Telegram si algo falla. Lo que queda es opcional (el deploy por Actions) o
+editorial (los 6 avisos del linter).
 
 ## State of the tree
 
-- Branch: `master`
-- Último commit: ver `git log -1`. Local y remoto sincronizados.
-- Cambios sin commitear: ninguno
+- Branch: `master`. Local, GitHub y VPS sincronizados.
 - Remoto: `git@github-social:WalterNights/social-autom.git`, **repositorio público**
   por decisión explícita del usuario (se le advirtió que expone los posts antes de
-  publicarse; lo quiere como portafolio). Acceso por clave SSH dedicada
-  `~/.ssh/id_ed25519_social`, sin passphrase, registrada como **deploy key con
-  permiso de escritura** y con alias `github-social` en `~/.ssh/config`. Cada repo
-  del usuario tiene su propia clave: no reutilizar las de otros proyectos.
+  publicarse; lo quiere como portafolio).
+- **Dos deploy keys, ambas con escritura.** Una desde Windows
+  (`~/.ssh/id_ed25519_social`, alias `github-social`) y otra desde el VPS
+  (`/root/.ssh/id_github`), que es la que usa el servidor para empujar el estado
+  tras publicar. Cada máquina con la suya: revocar una no toca la otra.
+
+## El despliegue, tal como quedó
+
+- **VPS Ubuntu 25.10, acceso root**, proyecto en `/opt/linkedin-ops`.
+- **Zona horaria del servidor en `America/Bogota`**, a propósito: así el cron se
+  escribe en hora local y desaparece la traducción a UTC, que es donde se cometen
+  los errores.
+- **Cron** (`scripts/cron-install.sh`, idempotente):
+  - `30 7 * * 1,3,5` → `scripts/publicar.sh`
+  - `0 8 * * *` → `npm run token -- --avisar`
+  - Con una línea `PATH=` explícita: cron arranca con un entorno mínimo y sin ella
+    `npm` no se encuentra.
+- **`.env` y `.tokens.json` se crearon a mano en el servidor** (con `nano`), con
+  permisos 600. Nunca se versionan.
+- **Playwright funciona** pese a avisar de que Ubuntu 25.10 no está soportado
+  oficialmente: baja la compilación de 24.04 y renderiza las 9 tarjetas sin
+  problema. Verificado en el servidor.
 
 ## Recent work
 
-- **Instalación desde cero** (el proyecto venía como `linkedin-ops.tar.gz`) y dos
-  bugs que impedían usarlo: el guard de entrypoint de `auth.js` nunca daba true en
-  Windows, así que `npm run auth` moría en silencio; y la plantilla `lista`
-  desbordaba el lienzo en tres tarjetas, perdiendo una línea entera del pie en el
-  post 19.
-- **Primera publicación real** (post 01, `urn:li:share:7495083744874188800`).
-  Confirmó que el escapado se comporta como documenta la especificación `little`.
-  Hasta ese momento el código contra LinkedIn nunca se había ejecutado.
-- **`publish.js` revisado contra la doc oficial.** Todo coincide; se corrigió un
-  bug: mandaba el slug en `content.media.title`, y para imágenes el campo
-  documentado es `altText`.
-- **`ESTADO.md` generado** desde los posts (`npm run estado`), y actualizado solo
-  después de cada publicación.
-- **Sistema de avisos por Telegram, probado de punta a punta.** `npm run token`
-  vigila el vencimiento del acceso y avisa a los 10 días del corte; `publish.js`
-  avisa cuando falla, cuando la cola se agota, y cuando publica bien.
+- **Sistema completo funcionando y verificado en producción.** El post 02 se
+  publicó por cron, el servidor commiteó el estado y lo empujó a GitHub solo.
+- **Se adelantó la cola 7 días.** El post 01 salió el 17/08 como prueba, pero la
+  cola estaba fechada suponiendo arranque el 24, lo que dejaba 9 días de hueco y
+  rompía la cadencia L/X/V. Al restar 7 días exactos ningún post cambia de día de
+  la semana, y como efecto secundario la serie termina antes del corte del token.
+- **Dos bugs de plataforma Windows→Linux, ambos ya con guardia:**
+  - Los `.sh` estaban guardados como `100644` porque en Windows `core.fileMode` es
+    `false` y el `chmod +x` nunca llegó al índice. El cron murió con "Permission
+    denied". Ahora el CI falla si algún `.sh` no está en `100755`.
+  - `parsePost` reventaba tras cada publicación: al traerse el post con `pull`,
+    `core.autocrlf` lo dejaba en CRLF y el delimitador de cierre `---\r` no
+    coincidía. Se tolera CRLF y se añadió `.gitattributes` con `eol=lf`.
+- **CI en GitHub Actions**: lint, render de las 9 imágenes, comprobación de que
+  son 1080×1080 y de que los scripts son ejecutables.
 
 ## Active decisions
 
-- **Telegram, no WhatsApp.** Se pidió WhatsApp, pero Meta solo permite mensajes
-  libres dentro de una ventana de 24 h que abre el usuario. Un cron a las 7:30 cae
-  fuera, así que cada tipo de aviso necesitaría una plantilla aprobada, un número
-  dedicado distinto del personal y cuenta de Meta Business. Telegram quedó
-  funcionando el mismo día.
+- **Telegram, no WhatsApp.** Meta solo permite mensajes libres dentro de una
+  ventana de 24 h que abre el usuario; un cron a las 7:30 cae fuera, así que cada
+  aviso necesitaría plantilla aprobada, número dedicado y cuenta de Meta Business.
+- **El VPS commitea y empuja lo que publica.** No es cosmético: sin ese commit el
+  repo diría `ready` para un post que ya salió, y el siguiente `pull` chocaría.
+  Si el push falla, `publicar.sh` avisa por Telegram.
+- **El deploy usa `merge --ff-only`, nunca `reset --hard`.** Si el servidor tiene
+  una publicación sin empujar, el deploy debe fallar, no pisarla.
 - **Los avisos viven en `src/lib/telegram.js`, no en `publish.js`.** `publish.js`
-  tiene código de nivel superior: **publica con solo importarlo**. Su `notify`
-  exportado era una trampa — cualquier comando que quisiera avisar habría
-  disparado una publicación real. No volver a importar nada de `publish.js`.
-- **`ESTADO.md` es un reflejo, no un registro.** La verdad de qué se publicó vive
-  en el frontmatter de cada post (`status`, `publishedAt`, `urn`), versionado en
-  git. Dos fuentes de verdad se habrían desincronizado. Si discrepan, gana el post.
-- **El `#` no se escapa al publicar.** Verificado contra la doc y contra una
-  publicación real: un `#palabra` sin escapar se vuelve hashtag; escaparlo lo mata.
-- **La app de LinkedIn es propia del proyecto**, no reutilizada de otro proyecto
-  del usuario: pedir un scope distinto sobre la misma app invalida los tokens
-  previos y acopla la rotación del client secret.
-- **Sin refresh token.** Los refresh tokens programáticos son solo para partners.
-  `freshTokens()` no puede renovar solo; hay que repetir `npm run auth` a mano.
+  tiene código de nivel superior: **publica con solo importarlo**. No importar
+  nada de ahí.
+- **`ESTADO.md` es un reflejo, no un registro.** La verdad vive en el frontmatter
+  de cada post. Si discrepan, gana el post.
 - **Un aviso que falla debe salir con código 1.** Un `exit 0` cuando el mensaje no
   salió significa "todo bien" en el log del cron, y es justo el caso en que nadie
-  se enteró de nada.
+  se enteró.
+- **El `#` no se escapa al publicar.** Verificado contra la doc y contra dos
+  publicaciones reales.
+- **Sin refresh token.** Son solo para partners; hay que repetir `npm run auth`.
 
 ## Next steps
 
-1. **Recoger los datos del VPS**: distro y si hay root. Bloquea todo lo demás.
-2. Montar el despliegue: clonar desde GitHub con una deploy key **de solo lectura**
-   en el servidor, cron a la hora correcta, `.env` y `.tokens.json` creados allá con
-   permisos 600 (nunca versionados), Playwright con sus librerías del sistema.
-3. Decidir si se monta el subdominio HTTPS para la re-autenticación desde el
-   celular (ver Open questions).
-4. Atender los 6 avisos del linter (cinco líneas de 3–4 frases, un post con tres
+1. Terminar el deploy por Actions **si se quiere**: faltan los cinco secretos
+   `VPS_HOST`, `VPS_USER`, `VPS_PATH`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS`. El
+   secreto `ENV_FILE` ya existe y el workflow lo usa para escribir el `.env`.
+   Es comodidad: sin esto, actualizar el servidor es un `git pull`.
+2. Atender los 6 avisos del linter (cinco líneas de 3–4 frases, un post con tres
    tipos de marcador). Son reales, no ruido; no silenciarlos tocando el linter.
+3. Endurecer el SSH del VPS (desactivar login por contraseña) ahora que las claves
+   funcionan. El repo es público y describe qué corre en ese servidor.
 
 ## Open questions / blockers
 
-- **Datos del VPS pendientes.** Distro y si hay root. El despliegue por git ya es
-  posible: el repo está en GitHub.
-- **El enlace de re-autenticación no funciona desde el celular tal como está.**
-  Dos motivos: el `state` que valida `auth.js` solo existe mientras ese proceso
-  corre, así que un enlace generado por el cron llevaría un `state` que nadie
-  espera; y el redirect es `http://localhost:5599/callback`, que en un teléfono
-  apunta al propio teléfono. Falla de la peor forma: el usuario autoriza de verdad
-  y el código no llega a ninguna parte. Para resolverlo hace falta un subdominio
-  con HTTPS apuntando al VPS, registrarlo en la pestaña Auth de la app, y separar
-  en `auth.js` el puerto de escucha del que va en el redirect. **Sin dominio**, la
-  alternativa es hacerlo desde el portátil con túnel SSH
-  (`ssh -L 5599:localhost:5599 usuario@vps`), que son dos minutos seis veces al año.
-- **El VPS casi seguro corre en UTC.** El cron del README (`30 7 * * 1,3,5`) serían
-  las 2:30 a.m. hora Colombia. Colombia es UTC−5 fijo: lo correcto es
-  `30 12 * * 1,3,5`.
-- **Playwright en el VPS** necesita `npx playwright install --with-deps chromium`,
-  que pide root y baja ~115 MB.
+- Ninguno bloquea la publicación. El sistema funciona sin intervención.
+- **El enlace de re-autenticación no serviría desde el celular** tal como está: el
+  `state` solo existe mientras corre `auth.js`, y el redirect apunta a
+  `localhost`. Haría falta un subdominio con HTTPS sobre el VPS. Con las fechas
+  actuales **no hace falta renovar durante la serie**, así que dejó de ser urgente.
 
 ## Fechas que importan
 
-- **El access token vence el 16/10/2026.** `freshTokens()` corta 5 días antes, así
-  que **desde el 11/10 el publicador falla** y los posts 22, 23 y 24 no saldrían.
-  El aviso de Telegram salta a los 10 días del corte (≈01/10), pero conviene
-  renovar a finales de septiembre.
-- La cola va del 24/08 al 16/10, lunes/miércoles/viernes. Hoy: 1 publicado,
-  23 en `ready`, 0 en `draft`. La serie completa está armada.
+- **Serie: 17/08 → 09/10**, lunes/miércoles/viernes.
+- Publicados: **01** (17/08, a mano) y **02** (19/08, primer cron automático).
+  Siguiente: **03 el viernes 21/08**.
+- **El token vence el 16/10 y el publicador corta el 11/10.** La serie termina el
+  09/10, así que **ningún post queda en riesgo**. El aviso de Telegram saltaría
+  igual hacia el 01/10.
 
 ## Comandos
 
@@ -112,21 +111,24 @@ esperando dos datos: qué distro corre y si hay root.
 | `npm run estado` | Regenera `ESTADO.md` |
 | `npm run token` | Días que le quedan al acceso y qué posts peligran |
 | `npm run token -- --avisar` | Solo escribe a Telegram si urge. Para el cron |
+| `npm run next` | Vista previa de lo que toca. No publica |
 | `npm run publish -- --slug X` | Publica uno concreto. **Ojo:** sin el `--`, npm se traga el flag |
 
-Variables nuevas en `.env`: `TG_BOT_TOKEN`, `TG_CHAT_ID`, y opcional
-`TOKEN_AVISO_DIAS` (por defecto 10).
+En el servidor, el log de todo está en `/opt/linkedin-ops/publish.log`.
+
+Variables de `.env`: las de LinkedIn, más `TG_BOT_TOKEN`, `TG_CHAT_ID` y la
+opcional `TOKEN_AVISO_DIAS` (por defecto 10). **No poner `TOKEN_AVISO_DIAS` en el
+`.env` del servidor**: forzaría el aviso a diario y se acabaría ignorando.
 
 ## Pointers
 
 - [CLAUDE.md](CLAUDE.md) — reglas duras: nunca publicar por cuenta propia, no
-  editar posts publicados, no migrar el frontmatter a YAML.
-- [README.md](README.md) — instalación, comandos y anatomía de un post.
+  editar posts publicados, convención de commits.
+- [scripts/publicar.sh](scripts/publicar.sh) — lo que llama el cron.
+- [scripts/setup-vps.sh](scripts/setup-vps.sh) — instalación del servidor, idempotente.
 - [src/lib/telegram.js](src/lib/telegram.js) — avisos. Reutilizable sin riesgo.
-- [src/token.js](src/token.js) — vigilancia del vencimiento del acceso.
 - [src/publish.js](src/publish.js) — publicador. **Publica al importarlo.**
 - [src/lib/rules.js](src/lib/rules.js) — reglas editoriales, compartidas por el
   linter y el publicador. Si cambia una regla, se cambia solo ahí.
 - [Posts API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api)
-  · [Images API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api)
   · [little text format](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/little-text-format)
