@@ -22,6 +22,20 @@ jobs:
           node-version: '22'
           cache: npm
 
+      # El 19/08 el cron fallo con "Permission denied": los .sh estaban guardados
+      # como 100644 porque en Windows core.fileMode es false y el chmod +x nunca
+      # llego al indice. El CI validaba el contenido, no que fuera ejecutable.
+      - name: Comprobar que los scripts son ejecutables
+        run: |
+          malos=$(git ls-files -s -- '*.sh' | awk '$1 != "100755" { print $4 }')
+          if [ -n "$malos" ]; then
+            echo "::error::Estos scripts no estan marcados como ejecutables en git:"
+            echo "$malos"
+            echo "Arreglalo con: git update-index --chmod=+x <archivo>"
+            exit 1
+          fi
+          echo "Todos los .sh estan marcados como ejecutables."
+
       - run: npm ci
 
       # El linter es la puerta: un post con el gancho demasiado largo o con un
