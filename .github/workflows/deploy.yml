@@ -1,0 +1,52 @@
+name: Deploy al VPS
+
+# Manual por defecto. Para que salga solo en cada push a master, descomenta el
+# bloque `push`. Se deja manual a propósito: un deploy que reinicia el servidor
+# cada vez que corriges una coma en el README es ruido, no automatización.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [master]
+  #   paths-ignore: ['**.md', 'docs/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preparar la clave SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # Fijar la huella del host evita confiar a ciegas en quien responda.
+          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Actualizar el código en el servidor
+        env:
+          DESTINO: ${{ secrets.VPS_PATH }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "set -euo pipefail
+             cd '$DESTINO'
+             git fetch --quiet origin
+             # --ff-only y no reset --hard: si el VPS tiene commits de una
+             # publicación sin empujar, hay que enterarse, no pisarlos.
+             git merge --ff-only origin/master
+             npm ci --silent
+             npx playwright install chromium >/dev/null
+             npm run lint
+             npm run render
+             echo 'Deploy terminado en' \$(date)"
+
+      - name: Borrar la clave
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
