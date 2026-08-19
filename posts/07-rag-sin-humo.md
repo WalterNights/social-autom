@@ -2,7 +2,7 @@
 {
   "slug": "rag-sin-humo",
   "n": 7,
-  "date": "2026-09-07",
+  "date": "2026-08-31",
   "status": "ready",
   "image": {
     "template": "proceso",

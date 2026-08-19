@@ -2,7 +2,7 @@
 {
   "slug": "agente-vs-workflow",
   "n": 13,
-  "date": "2026-09-21",
+  "date": "2026-09-14",
   "status": "ready",
   "image": {
     "template": "comparacion",

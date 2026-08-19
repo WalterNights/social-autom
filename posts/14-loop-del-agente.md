@@ -2,7 +2,7 @@
 {
   "slug": "loop-del-agente",
   "n": 14,
-  "date": "2026-09-23",
+  "date": "2026-09-16",
   "status": "ready",
   "image": null
 }

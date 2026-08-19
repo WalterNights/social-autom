@@ -2,7 +2,7 @@
 {
   "slug": "embeddings",
   "n": 8,
-  "date": "2026-09-09",
+  "date": "2026-09-02",
   "status": "ready",
   "image": null
 }

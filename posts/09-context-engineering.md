@@ -2,7 +2,7 @@
 {
   "slug": "context-engineering",
   "n": 9,
-  "date": "2026-09-11",
+  "date": "2026-09-04",
   "status": "ready",
   "image": null
 }

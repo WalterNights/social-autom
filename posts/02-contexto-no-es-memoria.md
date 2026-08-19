@@ -2,7 +2,7 @@
 {
   "slug": "contexto-no-es-memoria",
   "n": 2,
-  "date": "2026-08-26",
+  "date": "2026-08-19",
   "status": "ready",
   "image": null
 }

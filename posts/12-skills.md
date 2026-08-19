@@ -2,7 +2,7 @@
 {
   "slug": "skills",
   "n": 12,
-  "date": "2026-09-18",
+  "date": "2026-09-11",
   "status": "ready",
   "image": null
 }

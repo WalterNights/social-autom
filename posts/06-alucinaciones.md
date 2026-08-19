@@ -2,7 +2,7 @@
 {
   "slug": "alucinaciones",
   "n": 6,
-  "date": "2026-09-04",
+  "date": "2026-08-28",
   "status": "ready",
   "image": null
 }

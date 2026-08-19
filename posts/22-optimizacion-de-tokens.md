@@ -2,7 +2,7 @@
 {
   "slug": "optimizacion-de-tokens",
   "n": 22,
-  "date": "2026-10-12",
+  "date": "2026-10-05",
   "status": "ready",
   "image": {
     "template": "lista",

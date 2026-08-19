@@ -2,7 +2,7 @@
 {
   "slug": "mcp",
   "n": 11,
-  "date": "2026-09-16",
+  "date": "2026-09-09",
   "status": "ready",
   "image": null
 }

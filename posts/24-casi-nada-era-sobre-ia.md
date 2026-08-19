@@ -2,7 +2,7 @@
 {
   "slug": "casi-nada-era-sobre-ia",
   "n": 24,
-  "date": "2026-10-16",
+  "date": "2026-10-09",
   "status": "ready",
   "image": {
     "template": "pares",

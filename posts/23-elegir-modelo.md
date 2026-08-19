@@ -2,7 +2,7 @@
 {
   "slug": "elegir-modelo",
   "n": 23,
-  "date": "2026-10-14",
+  "date": "2026-10-07",
   "status": "ready",
   "image": null
 }

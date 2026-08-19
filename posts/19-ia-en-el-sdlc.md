@@ -2,7 +2,7 @@
 {
   "slug": "ia-en-el-sdlc",
   "n": 19,
-  "date": "2026-10-05",
+  "date": "2026-09-28",
   "status": "ready",
   "image": {
     "template": "lista",

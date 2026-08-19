@@ -2,7 +2,7 @@
 {
   "slug": "tokens-la-moneda-real",
   "n": 3,
-  "date": "2026-08-28",
+  "date": "2026-08-21",
   "status": "ready",
   "image": null
 }

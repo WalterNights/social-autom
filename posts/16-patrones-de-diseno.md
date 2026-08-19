@@ -2,7 +2,7 @@
 {
   "slug": "patrones-de-diseno",
   "n": 16,
-  "date": "2026-09-28",
+  "date": "2026-09-21",
   "status": "ready",
   "image": {
     "template": "lista",

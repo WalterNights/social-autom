@@ -2,7 +2,7 @@
 {
   "slug": "code-review",
   "n": 20,
-  "date": "2026-10-07",
+  "date": "2026-09-30",
   "status": "ready",
   "image": null
 }

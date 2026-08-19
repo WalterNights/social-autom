@@ -2,7 +2,7 @@
 {
   "slug": "prompt-injection",
   "n": 18,
-  "date": "2026-10-02",
+  "date": "2026-09-25",
   "status": "ready",
   "image": null
 }

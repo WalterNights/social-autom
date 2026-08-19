@@ -2,7 +2,7 @@
 {
   "slug": "prompt-especificacion",
   "n": 4,
-  "date": "2026-08-31",
+  "date": "2026-08-24",
   "status": "ready",
   "image": {
     "template": "lista",

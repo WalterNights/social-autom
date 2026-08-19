@@ -2,7 +2,7 @@
 {
   "slug": "temperature-dado-o-calculadora",
   "n": 5,
-  "date": "2026-09-02",
+  "date": "2026-08-26",
   "status": "ready",
   "image": null
 }
