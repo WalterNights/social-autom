@@ -50,12 +50,21 @@ fi
 chown -R "$USUARIO":"$USUARIO" "$DESTINO"
 
 log "Dependencias"
-sudo -u "$USUARIO" npm --prefix "$DESTINO" ci --silent
+( cd "$DESTINO" && npm ci --silent )
 
 log "Chromium para Playwright"
 # --with-deps trae las librerías de sistema; sin ellas el navegador no arranca
-# y el fallo aparece recién el día que toca renderizar.
-sudo -u "$USUARIO" npx --prefix "$DESTINO" playwright install --with-deps chromium
+# y el fallo aparece recién el día que toca renderizar. Necesita root, así que
+# va sin sudo -u: este script ya corre como root.
+( cd "$DESTINO" && npx playwright install --with-deps chromium )
+# El navegador queda en el caché de root; si el cron corre como otro usuario,
+# no lo encontraría. Se copia al usuario que va a publicar.
+if [ "$USUARIO" != "root" ]; then
+  destino_cache="$(getent passwd "$USUARIO" | cut -d: -f6)/.cache"
+  mkdir -p "$destino_cache"
+  cp -rn /root/.cache/ms-playwright "$destino_cache/" 2>/dev/null || true
+  chown -R "$USUARIO":"$USUARIO" "$destino_cache"
+fi
 
 log "Listo"
 cat <<FIN
