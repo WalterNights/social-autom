@@ -13,7 +13,10 @@ const DELIM = '---';
  * Se usa JSON y no YAML a propósito: cero dependencias y cero ambigüedad.
  */
 export function parsePost(raw, file) {
-  const lines = raw.split('\n');
+  // Se tolera el retorno de carro: el servidor escribe LF, pero al hacer pull
+  // en Windows con core.autocrlf el archivo llega en CRLF y el delimitador de
+  // cierre deja de coincidir con la comparacion exacta de mas abajo.
+  const lines = raw.split(/\r?\n/);
   if (lines[0].trim() !== DELIM) {
     throw new Error(`${file}: falta el frontmatter de apertura (---)`);
   }

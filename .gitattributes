@@ -1,0 +1,9 @@
+# El repo se edita en Windows y se ejecuta en Linux. Sin esto, git deja CRLF en
+# el arbol de trabajo al hacer checkout y las herramientas locales se rompen.
+* text=auto eol=lf
+
+# Los scripts van a un cron en Linux: un CRLF aqui rompe el shebang con
+# "bad interpreter" y el fallo aparece de madrugada, sin nadie mirando.
+*.sh text eol=lf
+
+*.png binary

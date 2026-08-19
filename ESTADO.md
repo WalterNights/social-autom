@@ -3,7 +3,7 @@
 Generado por `npm run estado`. **No lo edites a mano:** la verdad está en el
 frontmatter de cada archivo de `posts/`. Esto es un reflejo de eso.
 
-Última actualización: 2026-08-19 12:55 UTC
+Última actualización: 2026-08-19 13:05 UTC
 
 **24 posts** · 2 publicados · 22 listos · 0 en borrador
 
