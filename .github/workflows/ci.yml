@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Repo público: sin esto, el token del workflow trae permisos de escritura
+# por defecto en algunas configuraciones. Aquí solo hace falta leer.
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # El linter es la puerta: un post con el gancho demasiado largo o con un
+      # enlace en el cuerpo no debería llegar nunca a la cola.
+      - name: Validar los posts
+        run: npm run lint
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Renderizar prueba que las plantillas siguen produciendo imágenes. Sin
+      # esto, un cambio en card.html se descubre el día de la publicación.
+      - name: Renderizar las imágenes
+        run: npm run render
+
+      - name: Comprobar que los PNG son 1080x1080
+        run: |
+          node -e '
+            const fs = require("fs");
+            const dir = "out/images";
+            const files = fs.readdirSync(dir).filter(f => f.endsWith(".png"));
+            if (!files.length) { console.error("No se generó ninguna imagen."); process.exit(1); }
+            let malas = 0;
+            for (const f of files) {
+              const b = fs.readFileSync(`${dir}/${f}`);
+              const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+              if (w !== 1080 || h !== 1080) { console.error(`${f}: ${w}x${h}`); malas++; }
+            }
+            console.log(`${files.length} imágenes, ${malas} con tamaño incorrecto`);
+            process.exit(malas ? 1 : 0);
+          '
+
+      - name: Guardar las imágenes como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: imagenes
+          path: out/images/
+          retention-days: 7
