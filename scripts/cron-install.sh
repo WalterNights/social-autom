@@ -10,7 +10,7 @@ MARCA="# linkedin-ops"
 # para no tener que traducir a UTC aquí, que es donde se cuelan los errores.
 NUEVAS="$(cat <<CRON
 $MARCA
-# cron arranca con un PATH minimo y sin el, \`npm\` no se encuentra: la tarea
+# cron arranca con un PATH minimo. Sin esta linea npm no se encuentra: la tarea
 # falla en silencio a las 7:30 y nadie se entera hasta ver el feed vacio.
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 $MARCA publicar — lunes, miércoles y viernes a las 7:30
