@@ -20,32 +20,62 @@ jobs:
   desplegar:
     runs-on: ubuntu-latest
     steps:
+      # Sin esta comprobación, un secreto ausente llega hasta ssh y lo único
+      # que se ve en el log es la ayuda de ssh y un exit 255, que no dice nada.
+      - name: Comprobar que los secretos están
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          faltan=""
+          for n in VPS_HOST VPS_USER VPS_PATH VPS_SSH_KEY VPS_KNOWN_HOSTS; do
+            [ -n "${!n}" ] || faltan="$faltan $n"
+          done
+          if [ -n "$faltan" ]; then
+            echo "::error::Faltan o están vacíos estos secretos:$faltan"
+            echo ""
+            echo "Van en Settings > Secrets and variables > Actions,"
+            echo "pestaña 'Secrets' (NO 'Variables'), con estos nombres exactos:"
+            echo "  VPS_HOST         la IP o el hostname"
+            echo "  VPS_USER         root"
+            echo "  VPS_PATH         /opt/linkedin-ops"
+            echo "  VPS_SSH_KEY      la clave privada completa, con las líneas BEGIN y END"
+            echo "  VPS_KNOWN_HOSTS  la salida de: ssh-keyscan -H <ip>"
+            exit 1
+          fi
+          echo "Los cinco secretos están presentes."
+
       - name: Preparar la clave SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           # Fijar la huella del host evita confiar a ciegas en quien responda.
-          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/id_deploy >/dev/null \
+            || { echo "::error::VPS_SSH_KEY no es una clave privada válida."; exit 1; }
+          echo "Clave válida."
 
       - name: Actualizar el código en el servidor
         env:
-          DESTINO: ${{ secrets.VPS_PATH }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
         run: |
-          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "set -euo pipefail
-             cd '$DESTINO'
-             git fetch --quiet origin
-             # --ff-only y no reset --hard: si el VPS tiene commits de una
-             # publicación sin empujar, hay que enterarse, no pisarlos.
-             git merge --ff-only origin/master
-             npm ci --silent
-             npx playwright install chromium >/dev/null
-             npm run lint
-             npm run render
-             echo 'Deploy terminado en' \$(date)"
+          # En una sola línea a propósito: partir el comando remoto en varias
+          # líneas entre comillas es justo lo que rompió la versión anterior.
+          # --ff-only y no reset --hard: si el VPS tiene commits de una
+          # publicación sin empujar, hay que enterarse, no pisarlos.
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "set -e; cd '$VPS_PATH'; git fetch --quiet origin; git merge --ff-only origin/master; npm ci --silent; npx playwright install chromium >/dev/null; npm run lint; npm run render; echo DEPLOY-OK"
 
       - name: Borrar la clave
         if: always()
