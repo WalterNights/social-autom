@@ -3,8 +3,10 @@
   "slug": "contexto-no-es-memoria",
   "n": 2,
   "date": "2026-08-19",
-  "status": "ready",
-  "image": null
+  "status": "published",
+  "image": null,
+  "publishedAt": "2026-08-19T12:55:08.773Z",
+  "urn": "urn:li:share:7495825682959192065"
 }
 ---
 

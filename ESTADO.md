@@ -3,16 +3,16 @@
 Generado por `npm run estado`. **No lo edites a mano:** la verdad está en el
 frontmatter de cada archivo de `posts/`. Esto es un reflejo de eso.
 
-Última actualización: 2026-08-19 11:02 UTC
+Última actualización: 2026-08-19 12:55 UTC
 
-**24 posts** · 1 publicados · 23 listos · 0 en borrador
+**24 posts** · 2 publicados · 22 listos · 0 en borrador
 
-Siguiente en la cola: `02` contexto-no-es-memoria, el mié 19 ago.
+Siguiente en la cola: `03` tokens-la-moneda-real, el vie 21 ago.
 
 ## Semana 1
 
 - [x] `01` · lun 24 ago · no-sabe-predice — [ver publicación](https://www.linkedin.com/feed/update/urn:li:share:7495083744874188800)
-- [ ] `02` · mié 19 ago · contexto-no-es-memoria — listo
+- [x] `02` · mié 19 ago · contexto-no-es-memoria — [ver publicación](https://www.linkedin.com/feed/update/urn:li:share:7495825682959192065)
 - [ ] `03` · vie 21 ago · tokens-la-moneda-real — listo
 
 ## Semana 2
