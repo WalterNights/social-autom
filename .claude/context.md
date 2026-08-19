@@ -1,21 +1,25 @@
 # Project context
 
-_Última actualización: 2026-08-17 — sesión de puesta en marcha: instalación, primera publicación real y sistema de avisos por Telegram funcionando._
+_Última actualización: 2026-08-19 — cola completa en `ready` y proyecto subido a GitHub. Falta el despliegue en el VPS._
 
 ## Current focus
 
 Automatizar la publicación para no correr comandos a mano. Los avisos ya están
 resueltos y probados por Telegram. **Lo que falta es el despliegue en el VPS**
 del usuario (solo backend, sin front) con cron a la hora agendada. Está frenado
-esperando tres datos: distro, si hay root, y método de despliegue.
+esperando dos datos: qué distro corre y si hay root.
 
 ## State of the tree
 
 - Branch: `master`
-- Último commit: `34d56d5` Avisa por Telegram cuando la publicación falla
+- Último commit: ver `git log -1`. Local y remoto sincronizados.
 - Cambios sin commitear: ninguno
-- **El repo no tiene remoto.** Existe solo en el disco del usuario. Para desplegar
-  por `git pull` hay que subirlo a un repositorio privado primero.
+- Remoto: `git@github-social:WalterNights/social-autom.git`, **repositorio público**
+  por decisión explícita del usuario (se le advirtió que expone los posts antes de
+  publicarse; lo quiere como portafolio). Acceso por clave SSH dedicada
+  `~/.ssh/id_ed25519_social`, sin passphrase, registrada como **deploy key con
+  permiso de escritura** y con alias `github-social` en `~/.ssh/config`. Cada repo
+  del usuario tiene su propia clave: no reutilizar las de otros proyectos.
 
 ## Recent work
 
@@ -63,20 +67,19 @@ esperando tres datos: distro, si hay root, y método de despliegue.
 
 ## Next steps
 
-1. **Recoger los datos del VPS**: distro, si hay root, método de despliegue.
-   Bloquea todo lo demás.
-2. Montar el despliegue: cron a la hora correcta, `.env` y `.tokens.json` en el
-   servidor con permisos 600, Playwright con sus librerías del sistema.
+1. **Recoger los datos del VPS**: distro y si hay root. Bloquea todo lo demás.
+2. Montar el despliegue: clonar desde GitHub con una deploy key **de solo lectura**
+   en el servidor, cron a la hora correcta, `.env` y `.tokens.json` creados allá con
+   permisos 600 (nunca versionados), Playwright con sus librerías del sistema.
 3. Decidir si se monta el subdominio HTTPS para la re-autenticación desde el
    celular (ver Open questions).
-4. Pasar a `ready` los posts del 07 en adelante cuando el usuario quiera.
-5. Atender los 6 avisos del linter (cinco líneas de 3–4 frases, un post con tres
+4. Atender los 6 avisos del linter (cinco líneas de 3–4 frases, un post con tres
    tipos de marcador). Son reales, no ruido; no silenciarlos tocando el linter.
 
 ## Open questions / blockers
 
-- **Datos del VPS pendientes.** Distro, root, y si despliega por git (requiere
-  subir el repo a un remoto privado) o subiendo archivos.
+- **Datos del VPS pendientes.** Distro y si hay root. El despliegue por git ya es
+  posible: el repo está en GitHub.
 - **El enlace de re-autenticación no funciona desde el celular tal como está.**
   Dos motivos: el `state` que valida `auth.js` solo existe mientras ese proceso
   corre, así que un enlace generado por el cron llevaría un `state` que nadie
@@ -100,7 +103,7 @@ esperando tres datos: distro, si hay root, y método de despliegue.
   El aviso de Telegram salta a los 10 días del corte (≈01/10), pero conviene
   renovar a finales de septiembre.
 - La cola va del 24/08 al 16/10, lunes/miércoles/viernes. Hoy: 1 publicado,
-  5 en `ready` (hasta el 04/09), 18 en `draft`.
+  23 en `ready`, 0 en `draft`. La serie completa está armada.
 
 ## Comandos
 
