@@ -38,7 +38,27 @@ fi
 git add posts ESTADO.md
 git commit -q -m "Publica $(git diff --cached --name-only -- posts | head -1 | xargs -r basename | sed 's/\.md$//')"
 
-if git push -q origin master 2>/dev/null; then
+# El push puede ser rechazado si origin avanzo desde el ultimo pull del
+# servidor (alguien empujo codigo entre publicaciones). No es motivo para dejar
+# el estado sin subir: se traen los cambios, se reaplica el commit y se
+# reintenta. ESTADO.md es generado, asi que si choca se regenera y sigue.
+reconciliar() {
+  echo "Push rechazado. Traigo lo de origin y reintento."
+  if git pull --rebase --quiet origin master 2>/dev/null; then
+    return 0
+  fi
+  if git diff --name-only --diff-filter=U | grep -qx 'ESTADO.md'; then
+    echo "Conflicto en ESTADO.md; lo regenero."
+    npm run estado >/dev/null 2>&1
+    git add ESTADO.md
+    GIT_EDITOR=true git rebase --continue >/dev/null 2>&1 && return 0
+  fi
+  git rebase --abort 2>/dev/null || true
+  return 1
+}
+
+if git push -q origin master 2>/dev/null || { reconciliar && git push -q origin master 2>/dev/null; }; then
+
   echo "Estado empujado a origin."
 else
   # No es fatal: el post ya salió en LinkedIn y el commit está en el VPS. Pero
